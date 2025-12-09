@@ -1,44 +1,26 @@
-#include "crow.h"
-
-// FLINT 3 Includes
 #include <flint/acb.h>
 #include <flint/acb_dirichlet.h>
 #include <flint/arb.h>
 #include <flint/flint.h>
 
-auto arb_to_string = [](const acb_t& z, slong digits) -> std::string {
-    // 1. Prepare variables for Real (r) and Imaginary (i) parts
+#include "crow.h"
+
+struct ComplexResult {
+    double real;
+    double imag;
+    double t;
+};
+
+auto compute_l_raw = [](double s_real, double s_imag, ulong q, slong prec) -> ComplexResult {
+    acb_t s, res, z_real, z_imag;
+    acb_init(s);
+    acb_init(res);
+    acb_init(z_real);
+    acb_init(z_imag);
     arb_t r, i;
     arb_init(r);
     arb_init(i);
 
-    // 2. Extract parts from the complex number z
-    acb_get_real(r, z);
-    acb_get_imag(i, z);
-
-    // 3. Convert each part to a C-string
-    // arb_get_str arguments: (arb_t x, slong n, ulong flags)
-    char* s_r = arb_get_str(r, digits, 0);
-    char* s_i = arb_get_str(i, digits, 0);
-
-    // 4. Format nicely as "a + bi"
-    std::string result = std::string(s_r) + " + " + std::string(s_i) + "i";
-
-    // 5. Cleanup memory
-    flint_free(s_r);
-    flint_free(s_i);
-    arb_clear(r);
-    arb_clear(i);
-
-    return result;
-};
-
-auto compute_l_function = [](double s_real, double s_imag, ulong q, slong prec) -> std::string {
-    acb_t s, res;
-    acb_init(s);
-    acb_init(res);
-
-    // Set s = s_real + i*s_imag
     acb_set_d_d(s, s_real, s_imag);
 
     dirichlet_group_t G;
@@ -48,18 +30,26 @@ auto compute_l_function = [](double s_real, double s_imag, ulong q, slong prec) 
     dirichlet_char_init(chi, G);
     dirichlet_char_index(chi, G, 0);
 
-    // Compute L(s, chi)
     acb_dirichlet_l(res, s, G, chi, prec);
 
-    // Convert result to string
-    std::string output = arb_to_string(res, 15);
+    acb_get_real(r, res);
+    acb_get_imag(i, res);
+
+    ComplexResult out;
+    out.real = arf_get_d(arb_midref(r), ARF_RND_NEAR);
+    out.imag = arf_get_d(arb_midref(i), ARF_RND_NEAR);
+    out.t = s_imag;
 
     dirichlet_char_clear(chi);
     dirichlet_group_clear(G);
     acb_clear(s);
     acb_clear(res);
+    acb_clear(z_real);
+    acb_clear(z_imag);
+    arb_clear(r);
+    arb_clear(i);
 
-    return output;
+    return out;
 };
 
 int main() {
@@ -67,19 +57,43 @@ int main() {
 
     CROW_ROUTE(app, "/calc")
     ([](const crow::request& req) {
-        double s_real = 0.5;
-        double s_imag = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
+        double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
+        double i = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
 
-        std::string result = compute_l_function(s_real, s_imag, q, 128);
+        auto res = compute_l_raw(r, i, q, 128);
 
         crow::json::wvalue x;
-        x["result"] = result;
-        x["modulus"] = q;
-        x["s_real"] = s_real;
-        x["s_imag"] = s_imag;
-
+        x["real"] = res.real;
+        x["imag"] = res.imag;
         return x;
+    });
+
+    CROW_ROUTE(app, "/scan")
+    ([](const crow::request& req) {
+        double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
+        double start = req.url_params.get("start") ? std::stod(req.url_params.get("start")) : 0.0;
+        double end = req.url_params.get("end") ? std::stod(req.url_params.get("end")) : 30.0;
+        int steps = req.url_params.get("steps") ? std::stoi(req.url_params.get("steps")) : 100;
+        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
+
+        std::vector<crow::json::wvalue> results;
+        double step_size = (end - start) / steps;
+
+        for (int k = 0; k <= steps; ++k) {
+            double current_t = start + (k * step_size);
+            auto val = compute_l_raw(r, current_t, q, 64);  // Lower precision for speed
+
+            crow::json::wvalue p;
+            p["t"] = val.t;
+            p["real"] = val.real;
+            p["imag"] = val.imag;
+            results.push_back(p);
+        }
+
+        crow::json::wvalue final_json;
+        final_json["points"] = std::move(results);
+        return final_json;
     });
 
     CROW_ROUTE(app, "/")

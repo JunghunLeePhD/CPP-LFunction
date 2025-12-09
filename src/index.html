@@ -1,74 +1,220 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>L-Function Calculator</title>
+        <title>L-Function Visualizer</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             body {
                 font-family: sans-serif;
-                max-width: 600px;
-                margin: 40px auto;
+                max-width: 900px;
+                margin: 20px auto;
                 padding: 20px;
             }
-            .input-group {
-                margin-bottom: 15px;
+
+            /* Control Panel Styling */
+            .controls {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
             }
-            label {
-                display: inline-block;
-                width: 150px;
+            .input-group label {
+                display: block;
+                font-size: 0.8em;
+                margin-bottom: 5px;
+                font-weight: bold;
             }
-            input {
+            .input-group input {
+                width: 100%;
                 padding: 5px;
-                width: 200px;
+                box-sizing: border-box;
             }
             button {
-                padding: 10px 20px;
+                grid-column: span 4;
+                padding: 10px;
                 background: #007bff;
                 color: white;
                 border: none;
                 cursor: pointer;
+                font-size: 1em;
             }
-            #result {
-                margin-top: 20px;
-                padding: 15px;
-                background: #f0f0f0;
-                border-radius: 5px;
+            button:hover {
+                background: #0056b3;
+            }
+
+            /* Charts Layout */
+            .chart-container {
+                margin-bottom: 40px;
+                border: 1px solid #ddd;
+                padding: 10px;
+                border-radius: 8px;
+            }
+            h3 {
+                margin-top: 0;
+                color: #444;
+            }
+            canvas {
+                max-height: 600px;
+                width: 100%;
             }
         </style>
     </head>
     <body>
-        <h2>Dirichlet L-Function Calculator</h2>
-        <p>Computes L(s, &chi;) for principal character mod q.</p>
-        <p><em>Change any value and press Enter to calculate.</em></p>
+        <h2>Dirichlet L-Function Visualizer</h2>
 
-        <div class="input-group">
-            <label>Imag part (Im s):</label>
-            <input type="number" id="imag" value="14.134725" step="any" onchange="calculate()" />
-        </div>
-        <div class="input-group">
-            <label>Modulus (q):</label>
-            <input type="number" id="mod" value="1" onchange="calculate()" />
+        <div class="controls">
+            <div class="input-group">
+                <label>Real Part (Re s)</label>
+                <input type="number" id="real" value="0.5" step="0.1" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Range Start (t)</label>
+                <input type="number" id="start" value="0" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Range End (t)</label>
+                <input type="number" id="end" value="100" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Modulus (q)</label>
+                <input type="number" id="mod" value="1" onchange="updateCharts()" />
+            </div>
         </div>
 
-        <div id="result">Result will appear here...</div>
+        <div class="chart-container">
+            <h3>Complex Part</h3>
+            <canvas id="complexChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>Real Part</h3>
+            <canvas id="realChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>Imaginary Part</h3>
+            <canvas id="imagChart"></canvas>
+        </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                calculate();
-            });
-            async function calculate() {
-                const i = document.getElementById('imag').value;
+            let chartReal = null;
+            let chartImag = null;
+            let chartComplex = null;
+
+            async function updateCharts() {
+                const r = document.getElementById('real').value;
+                const start = document.getElementById('start').value;
+                const end = document.getElementById('end').value;
                 const q = document.getElementById('mod').value;
+                const steps = (end - start) * 10;
 
-                document.getElementById('result').innerText = 'Computing...';
+                // 1. Fetch Data
+                const response = await fetch(
+                    `/scan?r=${r}&start=${start}&end=${end}&q=${q}&steps=${steps}`
+                );
+                const data = await response.json();
+                const points = data.points;
 
-                try {
-                    const response = await fetch(`/calc?&i=${i}&q=${q}`);
-                    const data = await response.json();
-                    document.getElementById('result').innerText = `L(s) = ${data.result}`;
-                } catch (e) {
-                    document.getElementById('result').innerText = 'Error computing value.';
-                }
+                const labels = points.map((p) => p.t.toFixed(1));
+                const realData = points.map((p) => p.real);
+                const imagData = points.map((p) => p.imag);
+
+                // 2. Render Real Chart
+                if (chartReal) chartReal.destroy();
+                chartReal = new Chart(document.getElementById('realChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Re(L(s))',
+                                data: realData,
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: true,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { title: { display: true, text: 't' } },
+                        },
+                    },
+                });
+
+                // 3. Render Imaginary Chart
+                if (chartImag) chartImag.destroy();
+                chartImag = new Chart(document.getElementById('imagChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Im(L(s))',
+                                data: imagData,
+                                borderColor: 'rgb(54, 162, 235)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: true,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { title: { display: true, text: 't' } },
+                        },
+                    },
+                });
+
+                // 4. Render Complex Chart
+                if (chartComplex) chartComplex.destroy();
+                chartComplex = new Chart(document.getElementById('complexChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Re(L(s))',
+                                data: realData,
+                                borderColor: 'rgb(255, 99, 132)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                // fill: true,
+                            },
+                            {
+                                label: 'Im(L(s))',
+                                data: imagData,
+                                borderColor: 'rgb(54, 162, 235)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                // fill: true,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { title: { display: true, text: 't' } },
+                        },
+                    },
+                });
             }
+
+            document.addEventListener('DOMContentLoaded', updateCharts);
         </script>
     </body>
 </html>
