@@ -12,16 +12,24 @@
                 padding: 20px;
             }
 
-            /* Control Panel Styling */
             .controls {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
                 gap: 10px;
                 margin-bottom: 20px;
+
                 background: #f8f9fa;
+                border-bottom: 2px solid #ddd;
+
                 padding: 15px;
-                border-radius: 8px;
+                border-radius: 0 0 8px 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
+
             .input-group label {
                 display: block;
                 font-size: 0.8em;
@@ -52,6 +60,7 @@
                 border: 1px solid #ddd;
                 padding: 10px;
                 border-radius: 8px;
+                background: white; /* Ensure background is white */
             }
             h3 {
                 margin-top: 0;
@@ -61,24 +70,42 @@
                 max-height: 600px;
                 width: 100%;
             }
+
+            /* Improved Spinner */
             #loading-sign {
-                display: none; /* Hidden by default */
+                display: none;
                 position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.7);
+                z-index: 9999;
+            }
+            .spinner {
+                position: absolute;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 20px 40px;
-                border-radius: 8px;
-                font-size: 1.5em;
-                z-index: 1000;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                border: 8px solid #f3f3f3;
+                border-top: 8px solid #007bff;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% {
+                    transform: translate(-50%, -50%) rotate(0deg);
+                }
+                100% {
+                    transform: translate(-50%, -50%) rotate(360deg);
+                }
             }
         </style>
     </head>
     <body>
-        <h2>Dirichlet L-Function Visualizer</h2>
+        <h2 style="margin-top: 60px">Dirichlet L-Function Visualizer</h2>
 
         <div class="controls">
             <div class="input-group">
@@ -114,7 +141,9 @@
             <canvas id="imagChart"></canvas>
         </div>
 
-        <div id="loading-sign">Computing... ⏳</div>
+        <div id="loading-sign">
+            <div class="spinner"></div>
+        </div>
 
         <script>
             let chartReal = null;
@@ -158,7 +187,6 @@
                                     backgroundColor: 'rgba(255, 99, 132, 0.1)',
                                     borderWidth: 2,
                                     pointRadius: 0,
-                                    // fill: true,
                                 },
                             ],
                         },
@@ -185,7 +213,6 @@
                                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                     borderWidth: 2,
                                     pointRadius: 0,
-                                    // fill: true,
                                 },
                             ],
                         },
