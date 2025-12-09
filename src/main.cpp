@@ -2,6 +2,7 @@
 #include <flint/acb_dirichlet.h>
 #include <flint/arb.h>
 #include <flint/flint.h>
+#include <omp.h>  // <--- 1. Include OpenMP
 
 #include "crow.h"
 
@@ -60,15 +61,14 @@ int main() {
         double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
         double i = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
-
         auto res = compute_l_raw(r, i, q, 128);
-
         crow::json::wvalue x;
         x["real"] = res.real;
         x["imag"] = res.imag;
         return x;
     });
 
+    // PARALLEL SCAN ROUTE
     CROW_ROUTE(app, "/scan")
     ([](const crow::request& req) {
         double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
@@ -77,22 +77,36 @@ int main() {
         int steps = req.url_params.get("steps") ? std::stoi(req.url_params.get("steps")) : 100;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
 
-        std::vector<crow::json::wvalue> results;
+        // 2. Pre-allocate vector (Important for thread safety!)
+        // We use a raw struct vector first to avoid JSON overhead in the hot loop
+        std::vector<ComplexResult> raw_results(steps + 1);
+
         double step_size = (end - start) / steps;
 
+// 3. OpenMP Parallel Loop
+// "dynamic" scheduling is better here because some L-values take longer to converge than others
+#pragma omp parallel for schedule(dynamic)
         for (int k = 0; k <= steps; ++k) {
             double current_t = start + (k * step_size);
-            auto val = compute_l_raw(r, current_t, q, 64);  // Lower precision for speed
 
+            // This function is thread-safe because it uses local variables
+            raw_results[k] = compute_l_raw(r, current_t, q, 64);
+        }
+
+        // 4. Convert to JSON (Serial part, very fast)
+        std::vector<crow::json::wvalue> json_results;
+        json_results.reserve(steps + 1);
+
+        for (const auto& val : raw_results) {
             crow::json::wvalue p;
             p["t"] = val.t;
             p["real"] = val.real;
             p["imag"] = val.imag;
-            results.push_back(p);
+            json_results.push_back(std::move(p));
         }
 
         crow::json::wvalue final_json;
-        final_json["points"] = std::move(results);
+        final_json["points"] = std::move(json_results);
         return final_json;
     });
 
@@ -102,5 +116,6 @@ int main() {
         return crow::mustache::load_text("index.html");
     });
 
+    // Ensure Crow uses multiple threads for web requests too
     app.port(8080).multithreaded().run();
 }

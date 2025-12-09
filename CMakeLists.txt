@@ -17,6 +17,7 @@ FetchContent_MakeAvailable(Crow)
 find_library(FLINT_LIB flint REQUIRED)
 find_library(GMP_LIB gmp REQUIRED)
 find_library(MPFR_LIB mpfr REQUIRED)
+find_package(OpenMP REQUIRED)
 
 # 3. Add Executable
 add_executable(LFunctionServer src/main.cpp)
@@ -26,8 +27,7 @@ target_link_libraries(LFunctionServer PRIVATE
     ${FLINT_LIB} 
     ${MPFR_LIB} 
     ${GMP_LIB}
-    # We might need pthread for Crow/ASIO
-    pthread 
+    OpenMP::OpenMP_CXX  
 )
 
 # 5. Include Directories (THE FIX)
