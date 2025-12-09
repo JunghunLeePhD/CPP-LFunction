@@ -67,7 +67,7 @@ int main() {
 
     CROW_ROUTE(app, "/calc")
     ([](const crow::request& req) {
-        double s_real = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
+        double s_real = 0.5;
         double s_imag = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
 

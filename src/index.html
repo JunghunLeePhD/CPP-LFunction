@@ -40,10 +40,6 @@
         <p>Computes L(s, &chi;) for principal character mod q.</p>
 
         <div class="input-group">
-            <label>Real part (Re s):</label>
-            <input type="number" id="real" value="0.5" step="any" />
-        </div>
-        <div class="input-group">
             <label>Imag part (Im s):</label>
             <input type="number" id="imag" value="14.134725" step="any" />
         </div>
@@ -58,14 +54,13 @@
 
         <script>
             async function calculate() {
-                const r = document.getElementById('real').value;
                 const i = document.getElementById('imag').value;
                 const q = document.getElementById('mod').value;
 
                 document.getElementById('result').innerText = 'Computing...';
 
                 try {
-                    const response = await fetch(`/calc?r=${r}&i=${i}&q=${q}`);
+                    const response = await fetch(`/calc?i=${i}&q=${q}`);
                     const data = await response.json();
                     document.getElementById('result').innerText = `L(s) = ${data.result}`;
                 } catch (e) {
