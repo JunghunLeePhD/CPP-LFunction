@@ -1,13 +1,12 @@
 #include "crow.h"
 
 // FLINT 3 Includes
-#include <flint/flint.h>
-#include <flint/arb.h>
 #include <flint/acb.h>
 #include <flint/acb_dirichlet.h>
+#include <flint/arb.h>
+#include <flint/flint.h>
 
-auto arb_to_string = [](const acb_t &z, slong digits) -> std::string
-{
+auto arb_to_string = [](const acb_t& z, slong digits) -> std::string {
     // 1. Prepare variables for Real (r) and Imaginary (i) parts
     arb_t r, i;
     arb_init(r);
@@ -19,8 +18,8 @@ auto arb_to_string = [](const acb_t &z, slong digits) -> std::string
 
     // 3. Convert each part to a C-string
     // arb_get_str arguments: (arb_t x, slong n, ulong flags)
-    char *s_r = arb_get_str(r, digits, 0);
-    char *s_i = arb_get_str(i, digits, 0);
+    char* s_r = arb_get_str(r, digits, 0);
+    char* s_i = arb_get_str(i, digits, 0);
 
     // 4. Format nicely as "a + bi"
     std::string result = std::string(s_r) + " + " + std::string(s_i) + "i";
@@ -34,8 +33,7 @@ auto arb_to_string = [](const acb_t &z, slong digits) -> std::string
     return result;
 };
 
-auto compute_l_function = [](double s_real, double s_imag, ulong q, slong prec) -> std::string
-{
+auto compute_l_function = [](double s_real, double s_imag, ulong q, slong prec) -> std::string {
     acb_t s, res;
     acb_init(s);
     acb_init(res);
@@ -64,32 +62,31 @@ auto compute_l_function = [](double s_real, double s_imag, ulong q, slong prec) 
     return output;
 };
 
-int main()
-{
+int main() {
     crow::SimpleApp app;
 
     CROW_ROUTE(app, "/calc")
-    ([](const crow::request &req)
-     {
+    ([](const crow::request& req) {
         double s_real = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
         double s_imag = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
-        
+
         std::string result = compute_l_function(s_real, s_imag, q, 128);
-        
+
         crow::json::wvalue x;
         x["result"] = result;
         x["modulus"] = q;
         x["s_real"] = s_real;
         x["s_imag"] = s_imag;
-        
-        return x; });
+
+        return x;
+    });
 
     CROW_ROUTE(app, "/")
-    ([]()
-     {
+    ([]() {
         crow::mustache::context ctx;
-        return crow::mustache::load_text("index.html"); });
+        return crow::mustache::load_text("index.html");
+    });
 
     app.port(8080).multithreaded().run();
 }
