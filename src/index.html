@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="UTF-8" />
         <title>L-Function Visualizer</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
@@ -60,6 +61,20 @@
                 max-height: 600px;
                 width: 100%;
             }
+            #loading-sign {
+                display: none; /* Hidden by default */
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 8px;
+                font-size: 1.5em;
+                z-index: 1000;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
         </style>
     </head>
     <body>
@@ -99,6 +114,8 @@
             <canvas id="imagChart"></canvas>
         </div>
 
+        <div id="loading-sign">Computing... ⏳</div>
+
         <script>
             let chartReal = null;
             let chartImag = null;
@@ -111,107 +128,114 @@
                 const q = document.getElementById('mod').value;
                 const steps = (end - start) * 10;
 
-                // 1. Fetch Data
-                const response = await fetch(
-                    `/scan?r=${r}&start=${start}&end=${end}&q=${q}&steps=${steps}`
-                );
-                const data = await response.json();
-                const points = data.points;
+                // 1. SHOW LOADING SIGN
+                const loader = document.getElementById('loading-sign');
+                if (loader) loader.style.display = 'block';
 
-                const labels = points.map((p) => p.t.toFixed(1));
-                const realData = points.map((p) => p.real);
-                const imagData = points.map((p) => p.imag);
+                try {
+                    // 2. FETCH DATA
+                    const response = await fetch(
+                        `/scan?r=${r}&start=${start}&end=${end}&q=${q}&steps=${steps}`
+                    );
+                    const data = await response.json();
+                    const points = data.points;
 
-                // 2. Render Real Chart
-                if (chartReal) chartReal.destroy();
-                chartReal = new Chart(document.getElementById('realChart'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Re(L(s))',
-                                data: realData,
-                                borderColor: 'rgb(255, 99, 132)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: true,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { title: { display: true, text: 't' } },
+                    const labels = points.map((p) => p.t.toFixed(1));
+                    const realData = points.map((p) => p.real);
+                    const imagData = points.map((p) => p.imag);
+
+                    // 3. Render Real Chart
+                    if (chartReal) chartReal.destroy();
+                    chartReal = new Chart(document.getElementById('realChart'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Re(L(s))',
+                                    data: realData,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                    fill: true,
+                                },
+                            ],
                         },
-                    },
-                });
-
-                // 3. Render Imaginary Chart
-                if (chartImag) chartImag.destroy();
-                chartImag = new Chart(document.getElementById('imagChart'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Im(L(s))',
-                                data: imagData,
-                                borderColor: 'rgb(54, 162, 235)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: true,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { title: { display: true, text: 't' } },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            scales: { x: { title: { display: true, text: 't' } } },
+                            animation: false, // Faster updates
                         },
-                    },
-                });
+                    });
 
-                // 4. Render Complex Chart
-                if (chartComplex) chartComplex.destroy();
-                chartComplex = new Chart(document.getElementById('complexChart'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Re(L(s))',
-                                data: realData,
-                                borderColor: 'rgb(255, 99, 132)',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                // fill: true,
-                            },
-                            {
-                                label: 'Im(L(s))',
-                                data: imagData,
-                                borderColor: 'rgb(54, 162, 235)',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                // fill: true,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { title: { display: true, text: 't' } },
+                    // 4. Render Imaginary Chart
+                    if (chartImag) chartImag.destroy();
+                    chartImag = new Chart(document.getElementById('imagChart'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Im(L(s))',
+                                    data: imagData,
+                                    borderColor: 'rgb(54, 162, 235)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                    fill: true,
+                                },
+                            ],
                         },
-                    },
-                });
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            scales: { x: { title: { display: true, text: 't' } } },
+                            animation: false,
+                        },
+                    });
+
+                    // 5. Render Complex Chart (Both)
+                    if (chartComplex) chartComplex.destroy();
+                    chartComplex = new Chart(document.getElementById('complexChart'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Re(L(s))',
+                                    data: realData,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                },
+                                {
+                                    label: 'Im(L(s))',
+                                    data: imagData,
+                                    borderColor: 'rgb(54, 162, 235)',
+                                    borderWidth: 2,
+                                    pointRadius: 0,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            scales: { x: { title: { display: true, text: 't' } } },
+                            animation: false,
+                        },
+                    });
+                } catch (error) {
+                    console.error('Error computing:', error);
+                    alert('Computation failed. Check console for details.');
+                } finally {
+                    // 6. HIDE LOADING SIGN (Always runs)
+                    if (loader) loader.style.display = 'none';
+                }
             }
 
             document.addEventListener('DOMContentLoaded', updateCharts);
