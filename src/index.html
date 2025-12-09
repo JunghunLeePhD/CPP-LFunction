@@ -38,21 +38,23 @@
     <body>
         <h2>Dirichlet L-Function Calculator</h2>
         <p>Computes L(s, &chi;) for principal character mod q.</p>
+        <p><em>Change any value and press Enter to calculate.</em></p>
 
         <div class="input-group">
             <label>Imag part (Im s):</label>
-            <input type="number" id="imag" value="14.134725" step="any" />
+            <input type="number" id="imag" value="14.134725" step="any" onchange="calculate()" />
         </div>
         <div class="input-group">
             <label>Modulus (q):</label>
-            <input type="number" id="mod" value="1" />
+            <input type="number" id="mod" value="1" onchange="calculate()" />
         </div>
-
-        <button onclick="calculate()">Compute</button>
 
         <div id="result">Result will appear here...</div>
 
         <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                calculate();
+            });
             async function calculate() {
                 const i = document.getElementById('imag').value;
                 const q = document.getElementById('mod').value;
@@ -60,7 +62,7 @@
                 document.getElementById('result').innerText = 'Computing...';
 
                 try {
-                    const response = await fetch(`/calc?i=${i}&q=${q}`);
+                    const response = await fetch(`/calc?&i=${i}&q=${q}`);
                     const data = await response.json();
                     document.getElementById('result').innerText = `L(s) = ${data.result}`;
                 } catch (e) {
