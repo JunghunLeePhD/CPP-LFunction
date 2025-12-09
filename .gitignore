@@ -1,0 +1,35 @@
+# --- Compiled Object Files ---
+*.o
+*.obj
+
+# --- Static & Dynamic Libraries ---
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# --- Executables ---
+# Common extensions
+*.exe
+*.out
+*.app
+
+# --- Build Directories ---
+# It is best practice to build into a specific folder
+build/
+bin/
+dist/
+x64/
+Debug/
+Release/
+
+# --- IDE/Editor Specific (Optional but recommended) ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+output
+*.ppm

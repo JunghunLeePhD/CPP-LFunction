@@ -1,0 +1,20 @@
+{
+    "name": "C++ L-Function Server",
+    "build": { "dockerfile": "Dockerfile" },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",      
+                "ms-vscode.cmake-tools"    
+            ]
+        }
+    },
+    
+    "remoteUser": "vscode",
+    "forwardPorts": [8080],
+    
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+
+    "postCreateCommand": "mkdir -p build"
+}
