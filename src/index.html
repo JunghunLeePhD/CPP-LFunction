@@ -270,7 +270,7 @@
                 const end = document.getElementById('end').value;
                 const q = document.getElementById('mod').value;
                 const idx = document.getElementById('char-select').value || 1;
-                const steps = 200;
+                const steps = Math.min((end - start) * 10, 100000);
 
                 const loader = document.getElementById('loading-sign');
                 if (loader) loader.style.display = 'block';
