@@ -21,26 +21,27 @@ function onModulusChange() {
         qInput.value = 1;
     }
 
-    // Save current selection to restore it if possible
     const currentK = parseInt(kSelect.value) || 1;
-
-    // Clear and Rebuild Dropdown
     kSelect.innerHTML = '';
+
+    let charIndex = 1; 
 
     for (let k = 1; k <= q; k++) {
         if (gcd(k, q) === 1) {
             const option = document.createElement('option');
-            option.value = k;
+            
+            option.value = charIndex; 
 
             if (k === 1) option.text = `${k} (Principal)`;
             else if (k === q - 1 && q > 2) option.text = `${k}`;
             else option.text = k;
 
             kSelect.appendChild(option);
+            
+            charIndex++; 
         }
     }
 
-    // Restore previous selection if it is still valid for the new q
     let exists = false;
     for (let opt of kSelect.options) {
         if (parseInt(opt.value) === currentK) {
@@ -51,7 +52,6 @@ function onModulusChange() {
     }
     if (!exists) kSelect.value = 1;
 
-    // Finally, update the charts
     updateCharts();
 }
 
