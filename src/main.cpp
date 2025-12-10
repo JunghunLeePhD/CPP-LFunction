@@ -56,19 +56,6 @@ auto compute_l_raw = [](double s_real, double s_imag, ulong q, slong prec) -> Co
 int main() {
     crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/calc")
-    ([](const crow::request& req) {
-        double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
-        double i = req.url_params.get("i") ? std::stod(req.url_params.get("i")) : 14.1347;
-        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
-        auto res = compute_l_raw(r, i, q, 128);
-        crow::json::wvalue x;
-        x["real"] = res.real;
-        x["imag"] = res.imag;
-        return x;
-    });
-
-    // PARALLEL SCAN ROUTE
     CROW_ROUTE(app, "/scan")
     ([](const crow::request& req) {
         double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
