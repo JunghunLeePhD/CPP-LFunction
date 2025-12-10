@@ -12,7 +12,8 @@ struct ComplexResult {
     double t;
 };
 
-auto compute_l_raw = [](double s_real, double s_imag, ulong q, slong prec) -> ComplexResult {
+auto compute_l_raw = [](double s_real, double s_imag, ulong q, ulong char_idx,
+                        slong prec) -> ComplexResult {
     acb_t s, res, z_real, z_imag;
     acb_init(s);
     acb_init(res);
@@ -29,7 +30,10 @@ auto compute_l_raw = [](double s_real, double s_imag, ulong q, slong prec) -> Co
 
     dirichlet_char_t chi;
     dirichlet_char_init(chi, G);
-    dirichlet_char_index(chi, G, 0);
+
+    // 2. UPDATE: Use the passed index instead of hardcoded 0
+    // Note: char_idx should be < phi(q). FLINT handles this via group structure.
+    dirichlet_char_index(chi, G, char_idx);
 
     acb_dirichlet_l(res, s, G, chi, prec);
 
@@ -63,6 +67,10 @@ int main() {
         double end = req.url_params.get("end") ? std::stod(req.url_params.get("end")) : 30.0;
         int steps = req.url_params.get("steps") ? std::stoi(req.url_params.get("steps")) : 100;
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
+        unsigned long input_idx =
+            req.url_params.get("idx") ? std::stoul(req.url_params.get("idx")) : 1;
+
+        ulong idx = (input_idx > 0) ? (input_idx - 1) : 0;
 
         // 2. Pre-allocate vector (Important for thread safety!)
         // We use a raw struct vector first to avoid JSON overhead in the hot loop
@@ -77,7 +85,7 @@ int main() {
             double current_t = start + (k * step_size);
 
             // This function is thread-safe because it uses local variables
-            raw_results[k] = compute_l_raw(r, current_t, q, 64);
+            raw_results[k] = compute_l_raw(r, current_t, q, idx, 64);
         }
 
         // 4. Convert to JSON (Serial part, very fast)
