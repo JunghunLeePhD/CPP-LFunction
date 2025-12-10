@@ -18,7 +18,7 @@
                 top: 0;
                 z-index: 100;
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(5, 1fr);
                 gap: 10px;
                 margin-bottom: 20px;
                 background: #f8f9fa;
@@ -33,7 +33,8 @@
                 margin-bottom: 5px;
                 font-weight: bold;
             }
-            .input-group input {
+            .input-group input,
+            select {
                 width: 100%;
                 padding: 5px;
                 box-sizing: border-box;
@@ -120,7 +121,13 @@
             </div>
             <div class="input-group">
                 <label>Modulus (q)</label>
-                <input type="number" id="mod" value="1" min="1" onchange="updateCharts()" />
+                <input type="number" id="mod" value="1" min="1" onchange="onModulusChange()" />
+            </div>
+            <div class="input-group">
+                <label>Character (k)</label>
+                <select id="char-select" onchange="updateCharts()">
+                    <option value="1">1 (Principal)</option>
+                </select>
             </div>
         </div>
 
@@ -144,39 +151,84 @@
             let chartImag = null;
             let chartComplex = null;
 
-            // 1. ZOOM FUNCTION
-            function zoomTo(centerT) {
-                const startInput = document.getElementById('start');
-                const endInput = document.getElementById('end');
+            // 1. HELPER: GCD
+            function gcd(a, b) {
+                while (b) {
+                    [a, b] = [b, a % b];
+                }
+                return a;
+            }
 
-                const currentRange = parseFloat(endInput.value) - parseFloat(startInput.value);
-                const newRange = currentRange / 4; // 4x Zoom
+            // 2. MAIN LOGIC: Handle Modulus Change
+            function onModulusChange() {
+                const qInput = document.getElementById('mod');
+                const kSelect = document.getElementById('char-select');
 
-                // Calculate new bounds centered on the click
-                const newStart = centerT - newRange / 2;
-                const newEnd = centerT + newRange / 2;
+                let q = parseInt(qInput.value);
+                if (isNaN(q) || q < 1) {
+                    q = 1;
+                    qInput.value = 1;
+                }
 
-                startInput.value = newStart.toFixed(4);
-                endInput.value = newEnd.toFixed(4);
+                // Save current selection to restore it if possible
+                const currentK = parseInt(kSelect.value) || 1;
 
+                // Clear and Rebuild Dropdown
+                kSelect.innerHTML = '';
+
+                for (let k = 1; k <= q; k++) {
+                    if (gcd(k, q) === 1) {
+                        const option = document.createElement('option');
+                        option.value = k;
+
+                        if (k === 1) option.text = `${k} (Principal)`;
+                        else if (k === q - 1 && q > 2) option.text = `${k}`;
+                        else option.text = k;
+
+                        kSelect.appendChild(option);
+                    }
+                }
+
+                // Restore previous selection if it is still valid for the new q
+                let exists = false;
+                for (let opt of kSelect.options) {
+                    if (parseInt(opt.value) === currentK) {
+                        kSelect.value = currentK;
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) kSelect.value = 1;
+
+                // Finally, update the charts
                 updateCharts();
             }
 
-            // 2. RESET FUNCTION
+            // 3. CHART & ZOOM FUNCTIONS
+            function zoomTo(centerT) {
+                const startInput = document.getElementById('start');
+                const endInput = document.getElementById('end');
+                const currentRange = parseFloat(endInput.value) - parseFloat(startInput.value);
+                const newRange = currentRange / 4;
+                const newStart = centerT - newRange / 2;
+                const newEnd = centerT + newRange / 2;
+                startInput.value = newStart.toFixed(4);
+                endInput.value = newEnd.toFixed(4);
+                updateCharts();
+            }
+
             function resetZoom() {
                 document.getElementById('start').value = '0';
                 document.getElementById('end').value = '100';
                 updateCharts();
             }
 
-            // 3. COMMON CHART OPTIONS (With Click Handler)
             const commonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 scales: { x: { title: { display: true, text: 't' } } },
                 animation: false,
-                // THE ZOOM MAGIC:
                 onClick: (e) => {
                     const chart = e.chart;
                     const points = chart.getElementsAtEventForMode(
@@ -185,9 +237,7 @@
                         { intersect: false },
                         true
                     );
-
                     if (points.length) {
-                        // Get the exact value from the x-scale (t value)
                         const xValue = chart.scales.x.getValueForPixel(e.x);
                         zoomTo(xValue);
                     }
@@ -199,7 +249,7 @@
                 const start = document.getElementById('start').value;
                 const end = document.getElementById('end').value;
                 const q = document.getElementById('mod').value;
-                // Dynamic resolution: always 200 points regardless of zoom level
+                const idx = document.getElementById('char-select').value || 1;
                 const steps = 200;
 
                 const loader = document.getElementById('loading-sign');
@@ -207,16 +257,20 @@
 
                 try {
                     const response = await fetch(
-                        `/scan?r=${r}&start=${start}&end=${end}&q=${q}&steps=${steps}`
+                        `/scan?r=${r}&start=${start}&end=${end}&q=${q}&idx=${idx}&steps=${steps}`
                     );
                     const data = await response.json();
-                    const points = data.points;
 
-                    const labels = points.map((p) => p.t.toFixed(4)); // Higher precision labels
+                    if (data.error) {
+                        console.error(data.error);
+                        return;
+                    }
+
+                    const points = data.points;
+                    const labels = points.map((p) => p.t.toFixed(4));
                     const realData = points.map((p) => p.real);
                     const imagData = points.map((p) => p.imag);
 
-                    // --- Charts ---
                     if (chartReal) chartReal.destroy();
                     chartReal = new Chart(document.getElementById('realChart'), {
                         type: 'line',
@@ -232,7 +286,7 @@
                                 },
                             ],
                         },
-                        options: commonOptions, // Use shared options
+                        options: commonOptions,
                     });
 
                     if (chartImag) chartImag.destroy();
@@ -260,14 +314,14 @@
                             labels: labels,
                             datasets: [
                                 {
-                                    label: 'Re(L(s))',
+                                    label: 'Re',
                                     data: realData,
                                     borderColor: 'rgb(255, 99, 132)',
                                     borderWidth: 2,
                                     pointRadius: 0,
                                 },
                                 {
-                                    label: 'Im(L(s))',
+                                    label: 'Im',
                                     data: imagData,
                                     borderColor: 'rgb(54, 162, 235)',
                                     borderWidth: 2,
@@ -279,14 +333,15 @@
                     });
                 } catch (error) {
                     console.error('Error computing:', error);
-                    alert('Computation failed.');
                 } finally {
                     if (loader) loader.style.display = 'none';
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', updateCharts);
+            // 4. INITIALIZATION
+            document.addEventListener('DOMContentLoaded', onModulusChange);
 
+            // 5. KEYBOARD HANDLERS
             document.addEventListener('keydown', function (event) {
                 const modInput = document.getElementById('mod');
                 const endInput = document.getElementById('end');
@@ -295,20 +350,23 @@
                 if (active.tagName === 'INPUT' && active !== modInput && active !== endInput) {
                     return;
                 }
+
                 if (event.key === 'Escape') {
                     resetZoom();
                     event.preventDefault();
                 }
+
                 if (event.key === 'ArrowUp') {
                     modInput.stepUp();
-                    updateCharts();
+                    onModulusChange();
                     event.preventDefault();
                 }
                 if (event.key === 'ArrowDown') {
                     modInput.stepDown();
-                    updateCharts();
+                    onModulusChange();
                     event.preventDefault();
                 }
+
                 if (event.key === 'ArrowRight') {
                     endInput.stepUp();
                     updateCharts();
