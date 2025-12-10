@@ -34,10 +34,30 @@
                 font-weight: bold;
             }
             .input-group input,
-            select {
+            .input-group select {
                 width: 100%;
-                padding: 5px;
                 box-sizing: border-box;
+
+                /* 1. Force white background (overrides default grey) */
+                background-color: #ffffff;
+
+                /* 2. Define a consistent border and radius */
+                border: 1px solid #ccc; /* Light grey border */
+                border-radius: 8px; /* Rounded corners like your screenshot */
+
+                /* 3. Ensure they are the same height */
+                height: 40px;
+                padding: 5px 10px;
+
+                /* 4. Match font settings */
+                font-size: 1rem;
+                color: #333;
+            }
+
+            .input-group input:focus,
+            .input-group select:focus {
+                outline: none;
+                border-color: #007bff; /* Blue border when clicked */
             }
 
             /* Buttons */
