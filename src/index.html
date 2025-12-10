@@ -365,37 +365,55 @@
             document.addEventListener('keydown', function (event) {
                 const modInput = document.getElementById('mod');
                 const endInput = document.getElementById('end');
+                const charInput = document.getElementById('char-select');
 
                 const active = document.activeElement;
                 if (active.tagName === 'INPUT' && active !== modInput && active !== endInput) {
                     return;
                 }
+                if (event.shiftKey) {
+                    if (event.key === 'Escape') {
+                        resetZoom();
+                        event.preventDefault();
+                    }
 
-                if (event.key === 'Escape') {
-                    resetZoom();
-                    event.preventDefault();
+                    if (event.key === 'ArrowUp') {
+                        modInput.stepUp();
+                        onModulusChange();
+                        event.preventDefault();
+                    }
+                    if (event.key === 'ArrowDown') {
+                        modInput.stepDown();
+                        onModulusChange();
+                        event.preventDefault();
+                    }
+                    if (event.key === 'ArrowRight') {
+                        endInput.stepUp();
+                        updateCharts();
+                        event.preventDefault();
+                    }
+                    if (event.key === 'ArrowLeft') {
+                        endInput.stepDown();
+                        updateCharts();
+                        event.preventDefault();
+                    }
                 }
 
-                if (event.key === 'ArrowUp') {
-                    modInput.stepUp();
-                    onModulusChange();
-                    event.preventDefault();
-                }
-                if (event.key === 'ArrowDown') {
-                    modInput.stepDown();
-                    onModulusChange();
-                    event.preventDefault();
-                }
-
-                if (event.key === 'ArrowRight') {
-                    endInput.stepUp();
-                    updateCharts();
-                    event.preventDefault();
-                }
-                if (event.key === 'ArrowLeft') {
-                    endInput.stepDown();
-                    updateCharts();
-                    event.preventDefault();
+                if (event.altKey) {
+                    if (event.key === 'ArrowDown') {
+                        if (charInput.selectedIndex > 0) {
+                            charInput.selectedIndex--;
+                            updateCharts();
+                        }
+                        event.preventDefault();
+                    }
+                    if (event.key === 'ArrowUp') {
+                        if (charInput.selectedIndex < charInput.options.length - 1) {
+                            charInput.selectedIndex++;
+                            updateCharts();
+                        }
+                        event.preventDefault();
+                    }
                 }
             });
         </script>
