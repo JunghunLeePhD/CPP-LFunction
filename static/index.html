@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>L-Function Visualizer</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <link rel="stylesheet" href="/static/css/style.css" />
+    </head>
+    <body>
+        <h2 style="margin-top: 60px">Dirichlet L-Function Visualizer</h2>
+
+        <div class="controls">
+            <div class="input-group">
+                <label>Real Part (Re s)</label>
+                <input type="number" id="real" value="0.5" step="0.1" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Range Start (t)</label>
+                <input type="number" id="start" value="0" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Range End (t)</label>
+                <input type="number" id="end" value="100" step="10" onchange="updateCharts()" />
+            </div>
+            <div class="input-group">
+                <label>Modulus (q)</label>
+                <input type="number" id="mod" value="1" min="1" onchange="onModulusChange()" />
+            </div>
+            <div class="input-group">
+                <label>Character (k)</label>
+                <select id="char-select" onchange="updateCharts()">
+                    <option value="1">1 (Principal)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Complex Part</h3>
+            <canvas id="complexChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Real Part</h3>
+            <canvas id="realChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Imaginary Part</h3>
+            <canvas id="imagChart"></canvas>
+        </div>
+
+        <div id="loading-sign"><div class="spinner"></div></div>
+        <script src="/static/js/app.js"></script>
+    </body>
+</html>

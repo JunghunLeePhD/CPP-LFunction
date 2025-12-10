@@ -104,11 +104,11 @@ int main() {
         final_json["points"] = std::move(json_results);
         return final_json;
     });
-
     CROW_ROUTE(app, "/")
-    ([]() {
-        crow::mustache::context ctx;
-        return crow::mustache::load_text("index.html");
+    ([](const crow::request&, crow::response& res) {
+        // This matches your new CMake setup
+        res.set_static_file_info("static/index.html");
+        res.end();
     });
 
     // Ensure Crow uses multiple threads for web requests too

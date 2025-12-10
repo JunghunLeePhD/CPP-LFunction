@@ -38,5 +38,4 @@ target_include_directories(LFunctionServer PRIVATE
 )
 
 # 6. Copy HTML to 'templates' folder (Required by Crow)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/templates)
-configure_file(src/index.html ${CMAKE_BINARY_DIR}/templates/index.html COPYONLY)
+file(COPY ${CMAKE_SOURCE_DIR}/static DESTINATION ${CMAKE_BINARY_DIR})

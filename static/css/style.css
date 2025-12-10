@@ -1,0 +1,116 @@
+body {
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* Sticky Controls */
+.controls {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #ddd;
+    padding: 15px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.input-group label {
+    display: block;
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.input-group input,
+.input-group select {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* 1. Force white background (overrides default grey) */
+    background-color: #ffffff;
+
+    /* 2. Define a consistent border and radius */
+    border: 1px solid #ccc; /* Light grey border */
+    border-radius: 8px; /* Rounded corners like your screenshot */
+
+    /* 3. Ensure they are the same height */
+    height: 40px;
+    padding: 5px 10px;
+
+    /* 4. Match font settings */
+    font-size: 1rem;
+    color: #333;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #007bff; /* Blue border when clicked */
+}
+
+/* Buttons */
+button {
+    padding: 10px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+}
+.btn-run {
+    grid-column: span 5;
+    background: #007bff;
+} /* Full width */
+
+.chart-container {
+    margin-bottom: 40px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+    background: white;
+}
+h3 {
+    margin-top: 0;
+    color: #444;
+}
+canvas {
+    max-height: 600px;
+    width: 100%;
+    cursor: crosshair; /* Shows you can click */
+}
+
+/* Spinner */
+#loading-sign {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 9999;
+}
+.spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #007bff;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
