@@ -22,7 +22,7 @@ find_package(OpenMP REQUIRED)
 # 3. Add Executable
 add_executable(LFunctionServer 
     src/main.cpp 
-    src/l_functions.cpp
+    src/l_functions_flint.cpp
 )
 
 # 4. Link Libraries
@@ -38,7 +38,7 @@ target_link_libraries(LFunctionServer PRIVATE
 target_include_directories(LFunctionServer PRIVATE 
     ${crow_SOURCE_DIR}/include
     /usr/include/flint
-    ${CMAKE_SOURCE_DIR}/include  # <--- Added this so main.cpp can find l_functions.hpp
+    ${CMAKE_SOURCE_DIR}/include 
 )
 
 # 6. Copy HTML to 'templates' folder (Required by Crow)

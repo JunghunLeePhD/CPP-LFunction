@@ -4,13 +4,13 @@
 #include <vector>
 
 #include "crow.h"
-#include "l_functions.hpp"
+#include "l_functions_flint.hpp"
 
 int main() {
     crow::SimpleApp app;
 
     // API Route for computation
-    CROW_ROUTE(app, "/scan")
+    CROW_ROUTE(app, "/scan_flint")
     ([](const crow::request& req) {
         // 1. Parse Parameters
         double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;

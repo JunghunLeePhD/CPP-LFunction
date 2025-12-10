@@ -1,5 +1,5 @@
-#ifndef L_FUNCTIONS_HPP
-#define L_FUNCTIONS_HPP
+#ifndef L_FUNCTIONS_FLINT_HPP
+#define L_FUNCTIONS_FLINT_HPP
 
 #include <flint/flint.h>
 

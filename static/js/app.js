@@ -108,7 +108,7 @@ async function updateCharts() {
 
     try {
         const response = await fetch(
-            `/scan?r=${r}&start=${start}&end=${end}&q=${q}&idx=${idx}&steps=${steps}`
+            `/scan_flint?r=${r}&start=${start}&end=${end}&q=${q}&idx=${idx}&steps=${steps}`
         );
         const data = await response.json();
 
