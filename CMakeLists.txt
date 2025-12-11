@@ -23,6 +23,7 @@ find_package(OpenMP REQUIRED)
 add_executable(LFunctionServer 
     src/main.cpp 
     src/l_functions_flint.cpp
+    src/selberg_clt.cpp
 )
 
 # 4. Link Libraries
