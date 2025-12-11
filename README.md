@@ -1,93 +1,103 @@
-# **CPP-Template**
+# **L-Function Calculator (CPP-LFunction)**
 
-**CPP-Template** is a GitHub template for C++26 project mainly designed to numerically compute and visualize mathematical objects.
+A high-performance C++ application for computing and visualizing **L-Functions** using the [FLINT](https://flintlib.org/) (Fast Library for Number Theory) and [Arb](https://arblib.org/) libraries.
 
-## 📂 Project Structure
+This project combines a modern **C++23** backend with a lightweight **HTML/JS frontend**, allowing users to perform complex number-theoretic computations directly from their web browser.
 
-```
-CPP-Zeta/
-├── .devcontainer/         # VS Code DevContainer configuration
-│   ├── devcontainer.json
-│   └── Dockerfile
-├── lib/
-├── src/
-│   └── main.cpp           # Main application logic
-├── output/                # Generated program
-├── Makefile               # Build instructions
-└── README.md              # Project documentation
-```
+## **🚀 Quick Start (For Non-Developers)**
 
-## **🚀 Getting Started**
+_Use this method if you just want to run the application without writing code._
 
-You can set up this project locally or use the provided VS Code DevContainer for an instant, pre-configured environment.
+### **1. Prerequisites**
 
-### **Option A: VS Code DevContainer (Recommended)**
+-   **Docker Desktop**: Download and install it from [docker.com](https://www.docker.com/products/docker-desktop/).
 
-This project is configured with a Development Container. If you use Visual Studio Code and Docker, you can open this repository in a container that comes pre-installed with **GCC**, **Make**, and **FFmpeg**.
+-   _Note: Ensure Docker is running (look for the whale icon in your taskbar)._
 
-1. Open the project in VS Code.
+### **2. How to Run**
 
-2. Click **"Reopen in Container"** when the popup appears (or run the command from the palette).
+1. **Download** this repository (Click the green **Code** button -> **Download ZIP**) and unzip it.
 
-3. The environment will automatically install all necessary tools defined in `.devcontainer/Dockerfile`.
+2. Open a terminal (Command Prompt or PowerShell on Windows, Terminal on Mac).
 
-### **Option B: Local Installation**
+3. Navigate to the project folder.
 
-If you prefer to run directly on your host machine, ensure you have the following prerequisites installed:
-
-- **C++ Compiler:** GCC or Clang supporting C++26.
-
-- **Make:** For building the project.
-
-- **FFmpeg:** Required to convert the generated image frames into video files.
-
-
-### **Installation**
-
-1. **Clone the repository:**
-
-    ```bash
-    git clone https://github.com/JunghunLeePhD/CPP-Template.git
-    cd CPP-Template
-    ```
-
-## **💻 Usage**
-
-The usage consists of two steps: 
-
-### **1. Run the Simulation**
-
-Execute the following command to compile the project and run the simulation. 
+4. Run the following command:
 
 ```bash
-make run
+docker compose up
 ```
 
-## **🧹 Cleanup**
+5. Wait for the build to finish (this may take a few minutes the first time as it compiles the math libraries).
 
-To remove the generated frames and executable to save space:
+6. Open your browser and go to: 👉 **http://localhost:8080**
+
+To stop the application, press `Ctrl+C` in the terminal.
+
+## **🛠️ Development (For Developers)**
+
+_Use this method if you want to modify the C++ code or frontend._
+
+### **Option A: VS Code Dev Container (Recommended)**
+
+This project is configured with a **Dev Container**. This ensures you have the exact C++ compiler (GCC-14), CMake, and math libraries pre-installed without polluting your local machine.
+
+1. Install **VS Code** and the **Dev Containers** extension.
+
+2. Open this folder in VS Code.
+
+3. Click **"Reopen in Container"** when prompted (or run `Dev Containers: Reopen in Container` from the command palette).
+
+4. Once inside, you can build and run using the provided CMake tools or terminal:
 
 ```bash
-make clean
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+./LFunctionServer
 ```
 
-## **🤝 Contributing**
+### **Option B: Local Manual Build**
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+If you prefer not to use Docker, you must have the following installed on your host machine:
 
-1. Fork the Project
+-   **C++ Compiler**: GCC 14+ or Clang 18+ (Must support C++23).
 
-2. Create your Feature Branch (`git checkout -b feature/NewAlgorithm`)
+-   **CMake**: Version 3.16+.
 
-3. Commit your Changes (`git commit -m 'Add Odlyzko-Schonhagen method'`)
+-   **Libraries**: `libflint`, `libarb`, `libgmp`, `libmpfr`.
 
-4. Push to the Branch (`git push origin feature/NewAlgorithm`)
+```bash
+# Ubuntu/Debian example
+sudo apt install gcc-14 g++-14 cmake libflint-dev libarb-dev libgmp-dev libmpfr-dev
+```
 
-5. Open a Pull Request
+## **📂 File Structure**
 
+```
+CPP-LFunction/
+├── .devcontainer/       # Configuration for VS Code Dev Containers
+├── include/             # C++ Header files (.hpp)
+├── src/                 # C++ Source files (.cpp)
+│   ├── main.cpp         # Entry point & Web Server (Crow) configuration
+│   └── l_functions...   # Mathematical implementation logic
+├── static/              # Frontend Assets (HTML, CSS, JS)
+│   ├── index.html       # The main web interface
+│   └── css/             # Stylesheets
+├── Dockerfile           # Multi-stage build for production (Small size)
+├── compose.yaml         # Docker Compose file for easy launching
+├── CMakeLists.txt       # Build system configuration
+└── README.md            # Project documentation
+```
+
+## **⚙️ Performance Notes**
+
+-   **Docker Production Build:** The `Dockerfile` provided is a **multi-stage build**. It compiles the code in a heavy environment but runs it in a lightweight container.
+
+-   **Optimization:** The build is configured to use `Release` mode with `-O3` optimizations by default when using Docker Compose, ensuring maximum speed for heavy computations.
 
 ## **📄 License**
 
-Distributed under the MIT License. See `LICENSE` for more information.
+This project is open-source.
 
-Created by [*Junghun Lee, PhD*](https://www.google.com/search?q=https://github.com/JunghunLeePhD)
+-   **FLINT/Arb** libraries are subject to their respective licenses (LGPL/GPL).
