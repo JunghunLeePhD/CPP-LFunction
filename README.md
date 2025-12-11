@@ -4,6 +4,10 @@ A high-performance C++ application for computing and visualizing **L-Functions*
 
 This project combines a modern **C++23** backend with a lightweight **HTML/JS frontend**, allowing users to perform complex number-theoretic computations directly from their web browser.
 
+## 🎥 Demos
+
+![Dirichlet L-function](assets/CPP-LFunction.gif)
+
 ## **🚀 Quick Start (For Non-Developers)**
 
 _Use this method if you just want to run the application without writing code._
