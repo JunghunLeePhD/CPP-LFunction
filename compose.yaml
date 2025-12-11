@@ -1,0 +1,7 @@
+services:
+    l-function-app:
+        build: . # Builds using the Dockerfile above
+        container_name: math_webapp
+        ports:
+            - '8080:8080' # Opens localhost:8080 on the user's computer
+        restart: unless-stopped

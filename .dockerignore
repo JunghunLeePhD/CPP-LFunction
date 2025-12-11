@@ -1,0 +1,19 @@
+# Ignore local build artifacts
+
+build/
+.cmake/
+cmake-build-debug/
+cmake-build-release/
+
+# Ignore version control and IDE settings
+
+.git/
+.gitignore
+.vscode/
+.devcontainer/
+
+# Ignore Docker files themselves
+
+Dockerfile
+compose.yaml
+docker-compose.yml
