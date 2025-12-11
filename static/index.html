@@ -46,6 +46,46 @@
             <h3>Imaginary Part</h3>
             <canvas id="imagChart"></canvas>
         </div>
+        <div class="chart-container" style="border-top: 4px solid #007bff; margin-top: 50px">
+            <h3>Selberg CLT Visualization</h3>
+            <p style="font-size: 0.9em; color: #666">
+                Checks if log|L(s)| is normally distributed. (Red Line = Standard Normal N(0,1),
+                Blue Bars = Your Data)
+            </p>
+
+            <div
+                class="controls"
+                style="
+                    position: static;
+                    box-shadow: none;
+                    background: none;
+                    padding: 10px 0;
+                    border: none;
+                "
+            >
+                <div class="input-group">
+                    <label>Sim Start (t)</label>
+                    <input type="number" id="clt-start" value="1000" />
+                </div>
+                <div class="input-group">
+                    <label>Sim End (t)</label>
+                    <input type="number" id="clt-end" value="5000" />
+                </div>
+                <div class="input-group">
+                    <label>Samples</label>
+                    <input type="number" id="clt-samples" value="5000" step="1000" />
+                </div>
+                <button
+                    onclick="runSelbergCLT()"
+                    class="btn-run"
+                    style="grid-column: span 2; background: #28a745"
+                >
+                    Run CLT Simulation
+                </button>
+            </div>
+
+            <canvas id="cltChart"></canvas>
+        </div>
 
         <div id="loading-sign"><div class="spinner"></div></div>
         <script src="/static/js/app.js"></script>

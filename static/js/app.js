@@ -1,6 +1,7 @@
 let chartReal = null;
 let chartImag = null;
 let chartComplex = null;
+let chartCLT = null;
 
 // 1. HELPER: GCD
 function gcd(a, b) {
@@ -24,21 +25,21 @@ function onModulusChange() {
     const currentK = parseInt(kSelect.value) || 1;
     kSelect.innerHTML = '';
 
-    let charIndex = 1; 
+    let charIndex = 1;
 
     for (let k = 1; k <= q; k++) {
         if (gcd(k, q) === 1) {
             const option = document.createElement('option');
-            
-            option.value = charIndex; 
+
+            option.value = charIndex;
 
             if (k === 1) option.text = `${k} (Principal)`;
             else if (k === q - 1 && q > 2) option.text = `${k}`;
             else option.text = k;
 
             kSelect.appendChild(option);
-            
-            charIndex++; 
+
+            charIndex++;
         }
     }
 
@@ -82,12 +83,7 @@ const commonOptions = {
     animation: false,
     onClick: (e) => {
         const chart = e.chart;
-        const points = chart.getElementsAtEventForMode(
-            e,
-            'nearest',
-            { intersect: false },
-            true
-        );
+        const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
         if (points.length) {
             const xValue = chart.scales.x.getValueForPixel(e.x);
             zoomTo(xValue);
@@ -247,3 +243,105 @@ document.addEventListener('keydown', function (event) {
         }
     }
 });
+
+function normalPDF(x) {
+    return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * x * x);
+}
+
+async function runSelbergCLT() {
+    const q = document.getElementById('mod').value;
+    const idx = document.getElementById('char-select').value || 1;
+
+    // CLT specific inputs
+    const start = document.getElementById('clt-start').value;
+    const end = document.getElementById('clt-end').value;
+    const samples = document.getElementById('clt-samples').value;
+
+    const loader = document.getElementById('loading-sign');
+    if (loader) loader.style.display = 'block';
+
+    try {
+        // Fetch data from the new C++ route
+        const response = await fetch(
+            `/selberg_clt?q=${q}&idx=${idx}&start=${start}&end=${end}&samples=${samples}`
+        );
+        const data = await response.json();
+
+        // Data Processing: Create Histogram Bins
+        // We want a range from approx -4 to +4 (Standard Normal mostly fits here)
+        const binCount = 40;
+        const minVal = -4.0;
+        const maxVal = 4.0;
+        const step = (maxVal - minVal) / binCount;
+
+        // Initialize bins
+        let bins = new Array(binCount).fill(0);
+        let labels = [];
+
+        // Create X-axis labels (bin centers)
+        for (let i = 0; i < binCount; i++) {
+            labels.push((minVal + i * step + step / 2).toFixed(2));
+        }
+
+        // Fill bins
+        let validPoints = 0;
+        data.samples.forEach((pt) => {
+            const val = pt.val; // This is the normalized value
+            if (val >= minVal && val < maxVal) {
+                const binIdx = Math.floor((val - minVal) / step);
+                bins[binIdx]++;
+                validPoints++;
+            }
+        });
+
+        // Normalize heights to Probability Density
+        // Height = Count / (Total * BinWidth)
+        const densityData = bins.map((count) => count / (validPoints * step));
+
+        // Generate Ideal Gaussian Curve for comparison
+        const gaussianData = labels.map((x) => normalPDF(parseFloat(x)));
+
+        // Render Chart
+        if (chartCLT) chartCLT.destroy();
+
+        const ctx = document.getElementById('cltChart').getContext('2d');
+        chartCLT = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Standard Normal N(0,1)',
+                        data: gaussianData,
+                        borderColor: 'red',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4, // Smooth curve
+                        fill: false,
+                    },
+                    {
+                        type: 'bar',
+                        label: 'L-Function Distribution',
+                        data: densityData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        barPercentage: 1.0,
+                        categoryPercentage: 1.0, // Make bars touch like a histogram
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { title: { display: true, text: 'Normalized Value' } },
+                    y: { title: { display: true, text: 'Probability Density' } },
+                },
+            },
+        });
+    } catch (error) {
+        console.error('CLT Error:', error);
+    } finally {
+        if (loader) loader.style.display = 'none';
+    }
+}
