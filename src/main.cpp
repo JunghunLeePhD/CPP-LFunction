@@ -13,7 +13,6 @@
 int main() {
     crow::SimpleApp app;
 
-    // --- Route 1: Scan ALL Characters (FFT Based) ---
     CROW_ROUTE(app, "/scan_all")
     ([](const crow::request& req) {
         // 1. Parse Parameters
@@ -86,12 +85,52 @@ int main() {
         return response;
     });
 
-    // --- Route 2: Selberg CLT (Existing) ---
-    CROW_ROUTE(app, "/selberg_clt")
+    CROW_ROUTE(app, "/selberg")
+    ([](const crow::request&, crow::response& res) {
+        // Make sure this file exists in your build/static folder
+        res.set_static_file_info("static/selberg.html");
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/selberg_data")
     ([](const crow::request& req) {
-        // ... (Keep your existing Selberg logic here) ...
-        // For brevity, I am omitting the body, paste your previous Selberg code here
-        return crow::json::wvalue();
+        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 7;
+        int samples =
+            req.url_params.get("samples") ? std::stoi(req.url_params.get("samples")) : 5000;
+        double T = req.url_params.get("T") ? std::stod(req.url_params.get("T")) : 1000.0;
+        double t_start = T;
+        double t_end = 2.0 * T;
+
+        // This returns data for ALL characters at once
+        std::vector<std::vector<double>> all_data =
+            compute_selberg_samples_fft(q, t_start, t_end, samples, 64);
+
+        // Pack into JSON
+        std::vector<crow::json::wvalue> all_datasets;
+        all_datasets.reserve(all_data.size());
+
+        for (size_t idx = 0; idx < all_data.size(); idx++) {
+            std::vector<double>& raw_vals = all_data[idx];
+
+            // Filter out -999 errors if necessary
+            std::vector<double> clean_vals;
+            clean_vals.reserve(raw_vals.size());
+            for (double v : raw_vals) {
+                if (v > -900.0) clean_vals.push_back(v);
+            }
+
+            crow::json::wvalue ds;
+            ds["label"] = idx;
+            ds["values"] = std::move(clean_vals);
+            all_datasets.push_back(std::move(ds));
+        }
+
+        crow::json::wvalue response;
+        response["datasets"] = std::move(all_datasets);
+        response["range_start"] = t_start;
+        response["range_end"] = t_end;
+
+        return response;
     });
 
     // Root Route

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Selberg CLT Visualization</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body {
+                font-family: sans-serif;
+                width: min(95%, 1200px);
+                margin: clamp(20px, 5vh, 40px) auto;
+                padding: clamp(10px, 3vw, 20px);
+                background: #fdfdfd;
+            }
+            h2 {
+                text-align: center;
+                color: #333;
+            }
+
+            .nav-link {
+                display: block;
+                text-align: center;
+                margin-bottom: 20px;
+                color: #007bff;
+                text-decoration: none;
+            }
+            .nav-link:hover {
+                text-decoration: underline;
+            }
+
+            /* Controls Area */
+            .controls {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 333px), 1fr));
+                gap: 15px;
+                background: #f0f0f0;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                margin-bottom: 30px;
+            }
+            .input-group label {
+                display: block;
+                font-size: 0.85em;
+                font-weight: bold;
+                margin-bottom: 5px;
+                color: #555;
+            }
+            .input-group input {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            button {
+                grid-column: 1 / -1;
+                background: #28a745;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 4px;
+                font-size: 1em;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            button:hover {
+                background: #218838;
+            }
+
+            /* Chart Containers */
+            .main-chart-container {
+                height: 500px; /* Increased height slightly for better visibility */
+                border: 1px solid #ddd;
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 40px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }
+
+            #charts-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+                gap: 20px;
+            }
+
+            .chart-card {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                height: 350px;
+            }
+
+            .chart-title {
+                text-align: center;
+                font-weight: bold;
+                font-size: 0.9em;
+                margin-bottom: 10px;
+                color: #444;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 5px;
+            }
+
+            h3.section-header {
+                border-bottom: 2px solid #eee;
+                padding-bottom: 10px;
+                color: #555;
+                margin-top: 40px;
+            }
+
+            /* Loading Spinner */
+            #loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                z-index: 1000;
+            }
+            .spinner {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border: 6px solid #f3f3f3;
+                border-top: 6px solid #28a745;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% {
+                    transform: translate(-50%, -50%) rotate(0deg);
+                }
+                100% {
+                    transform: translate(-50%, -50%) rotate(360deg);
+                }
+            }
+
+            .info-text {
+                text-align: center;
+                margin: 10px 0 20px 0;
+                color: #666;
+                font-size: 0.9em;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Selberg CLT Verification</h2>
+
+        <div class="controls">
+            <div class="input-group">
+                <label>Modulus (q)</label>
+                <input type="number" id="q" value="7" />
+            </div>
+            <div class="input-group">
+                <label>Height T (Range [T, 2T])</label>
+                <input type="number" id="T" value="500" step="100" />
+            </div>
+            <div class="input-group">
+                <label>Samples per Char (N)</label>
+                <input type="number" id="samples" value="2000" step="400" />
+            </div>
+            <button onclick="runSimulation()">Run Simulation for All Characters</button>
+        </div>
+
+        <div id="range-display" class="info-text"></div>
+
+        <h3 class="section-header">Global Distribution</h3>
+        <div class="main-chart-container">
+            <canvas id="combinedChart"></canvas>
+        </div>
+
+        <h3 class="section-header">Individual Character Histograms</h3>
+        <div id="charts-grid"></div>
+
+        <div id="loading-overlay"><div class="spinner"></div></div>
+
+        <script>
+            let combinedChartInstance = null;
+            let activeSubCharts = [];
+
+            function normalPDF(x) {
+                return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * x * x);
+            }
+
+            // Generate distinct color
+            function getColor(index, total) {
+                const hue = (index * 360) / total;
+                return `hsla(${hue}, 70%, 45%, 0.7)`; // Slightly darker for lines
+            }
+
+            // Compute Histogram bins
+            function computeHistogram(dataPoints) {
+                const binCount = 40;
+                const minVal = -4;
+                const maxVal = 4;
+                const step = (maxVal - minVal) / binCount;
+
+                let bins = new Array(binCount).fill(0);
+                let labels = [];
+
+                for (let i = 0; i < binCount; i++) {
+                    labels.push((minVal + i * step).toFixed(2));
+                }
+
+                let validCount = 0;
+                dataPoints.forEach((val) => {
+                    if (val >= minVal && val < maxVal) {
+                        const binIdx = Math.floor((val - minVal) / step);
+                        bins[binIdx]++;
+                        validCount++;
+                    }
+                });
+
+                const density = bins.map((count) => count / (validCount * step));
+                const gaussian = labels.map((x) => normalPDF(parseFloat(x)));
+
+                return { labels, density, gaussian };
+            }
+
+            async function runSimulation() {
+                const q = document.getElementById('q').value;
+                const T = document.getElementById('T').value;
+                const samples = document.getElementById('samples').value;
+                const loader = document.getElementById('loading-overlay');
+                const grid = document.getElementById('charts-grid');
+
+                loader.style.display = 'block';
+
+                try {
+                    const res = await fetch(`/selberg_data?q=${q}&T=${T}&samples=${samples}`);
+                    const json = await res.json();
+
+                    if (!json.datasets || json.datasets.length === 0) {
+                        alert('No data returned.');
+                        return;
+                    }
+
+                    document.getElementById(
+                        'range-display'
+                    ).innerText = `Computed range: [${json.range_start}, ${json.range_end}]`;
+
+                    // --- Clean up old charts ---
+                    if (combinedChartInstance) combinedChartInstance.destroy();
+                    activeSubCharts.forEach((c) => c.destroy());
+                    activeSubCharts = [];
+                    grid.innerHTML = '';
+
+                    // --- Prepare Data for Combined Chart ---
+                    const firstHist = computeHistogram(json.datasets[0].values);
+                    const labels = firstHist.labels;
+
+                    // Base Dataset: Standard Normal (Thick Red Line)
+                    let combinedDatasets = [
+                        {
+                            label: 'Standard Normal N(0,1)',
+                            data: firstHist.gaussian,
+                            borderColor: 'red',
+                            borderWidth: 4,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            fill: false,
+                            order: 0, // Draw on top
+                        },
+                    ];
+
+                    // --- Loop through datasets ---
+                    json.datasets.forEach((ds, index) => {
+                        const hist = computeHistogram(ds.values);
+                        const color = getColor(index, json.datasets.length);
+
+                        // 1. Add to Combined Chart (Line only)
+                        combinedDatasets.push({
+                            label: `Chi ${ds.label}`,
+                            data: hist.density,
+                            borderColor: color,
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            tension: 0.3,
+                            fill: false,
+                            order: 1, // Draw behind the red line
+                        });
+
+                        // 2. Create Individual Sub-Chart
+                        const card = document.createElement('div');
+                        card.className = 'chart-card';
+
+                        const title = document.createElement('div');
+                        title.className = 'chart-title';
+                        title.innerText = `Character Index ${ds.label}`;
+
+                        const canvasContainer = document.createElement('div');
+                        canvasContainer.style.height = '300px';
+                        canvasContainer.style.position = 'relative';
+
+                        const canvas = document.createElement('canvas');
+                        canvasContainer.appendChild(canvas);
+                        card.appendChild(title);
+                        card.appendChild(canvasContainer);
+                        grid.appendChild(card);
+
+                        const ctxSub = canvas.getContext('2d');
+                        const subChart = new Chart(ctxSub, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        type: 'line',
+                                        label: 'Standard Normal',
+                                        data: hist.gaussian,
+                                        borderColor: 'red',
+                                        borderWidth: 2,
+                                        pointRadius: 0,
+                                        tension: 0.4,
+                                    },
+                                    {
+                                        type: 'bar',
+                                        label: 'Empirical',
+                                        data: hist.density,
+                                        backgroundColor: color,
+                                        barPercentage: 1.0,
+                                        categoryPercentage: 1.0,
+                                    },
+                                ],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { display: false },
+                                    y: { title: { display: true, text: 'Density' } },
+                                },
+                            },
+                        });
+                        activeSubCharts.push(subChart);
+                    });
+
+                    // --- Render Combined Chart ---
+                    const ctxComb = document.getElementById('combinedChart').getContext('2d');
+                    combinedChartInstance = new Chart(ctxComb, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: combinedDatasets,
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            interaction: { mode: 'nearest', intersect: false },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Comparison of All Characters vs Normal Distribution',
+                                },
+
+                                // --- CHANGED: Legend is now enabled on the right ---
+                                legend: {
+                                    display: true,
+                                    position: 'right', // Moves legend to side to save vertical space
+                                    labels: {
+                                        boxWidth: 12, // Smaller box
+                                        font: { size: 10 }, // Smaller font
+                                    },
+                                },
+                            },
+                            scales: {
+                                x: { title: { display: true, text: 'Normalized Value' } },
+                                y: { title: { display: true, text: 'Probability Density' } },
+                            },
+                        },
+                    });
+                } catch (e) {
+                    console.error(e);
+                    alert('Error fetching data');
+                } finally {
+                    loader.style.display = 'none';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', runSimulation);
+        </script>
+    </body>
+</html>
