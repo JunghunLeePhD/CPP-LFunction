@@ -1,6 +1,4 @@
-let chartReal = null;
-let chartImag = null;
-let chartComplex = null;
+let chartLog = null;
 let chartCLT = null;
 
 // 1. HELPER: GCD
@@ -116,61 +114,17 @@ async function updateCharts() {
         const points = data.points;
         const labels = points.map((p) => p.t.toFixed(4));
         const realData = points.map((p) => p.real);
-        const imagData = points.map((p) => p.imag);
 
-        if (chartReal) chartReal.destroy();
-        chartReal = new Chart(document.getElementById('realChart'), {
+        if (chartLog) chartLog.destroy();
+        chartLog = new Chart(document.getElementById('logChart'), {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Re(L(s))',
+                        label: 'log|L(0.5+it)|',
                         data: realData,
                         borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                    },
-                ],
-            },
-            options: commonOptions,
-        });
-
-        if (chartImag) chartImag.destroy();
-        chartImag = new Chart(document.getElementById('imagChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Im(L(s))',
-                        data: imagData,
-                        borderColor: 'rgb(54, 162, 235)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                    },
-                ],
-            },
-            options: commonOptions,
-        });
-
-        if (chartComplex) chartComplex.destroy();
-        chartComplex = new Chart(document.getElementById('complexChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Re',
-                        data: realData,
-                        borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                    },
-                    {
-                        label: 'Im',
-                        data: imagData,
-                        borderColor: 'rgb(54, 162, 235)',
                         borderWidth: 2,
                         pointRadius: 0,
                     },
