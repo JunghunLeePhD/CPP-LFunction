@@ -54,25 +54,6 @@ function onModulusChange() {
     updateCharts();
 }
 
-// 3. CHART & ZOOM FUNCTIONS
-function zoomTo(centerT) {
-    const startInput = document.getElementById('start');
-    const endInput = document.getElementById('end');
-    const currentRange = parseFloat(endInput.value) - parseFloat(startInput.value);
-    const newRange = currentRange / 4;
-    const newStart = centerT - newRange / 2;
-    const newEnd = centerT + newRange / 2;
-    startInput.value = newStart.toFixed(4);
-    endInput.value = newEnd.toFixed(4);
-    updateCharts();
-}
-
-function resetZoom() {
-    document.getElementById('start').value = '0';
-    document.getElementById('end').value = '100';
-    updateCharts();
-}
-
 const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
