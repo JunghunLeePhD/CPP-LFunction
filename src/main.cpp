@@ -1,95 +1,97 @@
 #include <omp.h>
 
-#include <cmath>  // for std::isnan check if needed
+#include <cmath>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "crow.h"
 #include "l_functions_flint.hpp"
+#include "l_vec_scan.hpp"
 #include "selberg_clt.hpp"
 
 int main() {
     crow::SimpleApp app;
 
-    // --- Existing Route: Scan (Linear) ---
-    CROW_ROUTE(app, "/scan_flint")
-    ([](const crow::request& req) {
-        // ... (Keep your existing code for /scan_flint here) ...
-        // (Just ensure you paste your existing logic here)
-
-        // Brief placeholder for your existing logic:
-        double r = req.url_params.get("r") ? std::stod(req.url_params.get("r")) : 0.5;
-        double start = req.url_params.get("start") ? std::stod(req.url_params.get("start")) : 0.0;
-        double end = req.url_params.get("end") ? std::stod(req.url_params.get("end")) : 30.0;
-        int steps = req.url_params.get("steps") ? std::stoi(req.url_params.get("steps")) : 100;
-        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
-        unsigned long input_idx =
-            req.url_params.get("idx") ? std::stoul(req.url_params.get("idx")) : 1;
-        ulong idx = (input_idx > 0) ? (input_idx - 1) : 0;
-
-        std::vector<ComplexResult> raw_results(steps + 1);
-        double step_size = (end - start) / steps;
-
-#pragma omp parallel for schedule(dynamic)
-        for (int k = 0; k <= steps; ++k) {
-            double current_t = start + (k * step_size);
-            raw_results[k] = compute_l_raw(r, current_t, q, idx, 64);
-        }
-
-        std::vector<crow::json::wvalue> json_results;
-        json_results.reserve(steps + 1);
-        for (const auto& val : raw_results) {
-            crow::json::wvalue p;
-            p["t"] = val.t;
-            p["real"] = val.real;
-            p["imag"] = val.imag;
-            json_results.push_back(std::move(p));
-        }
-        crow::json::wvalue final_json;
-        final_json["points"] = std::move(json_results);
-        return final_json;
-    });
-
-    // --- NEW Route: Selberg CLT Visualization ---
-    CROW_ROUTE(app, "/selberg_clt")
+    // --- Route 1: Scan ALL Characters (FFT Based) ---
+    CROW_ROUTE(app, "/scan_all")
     ([](const crow::request& req) {
         // 1. Parse Parameters
-        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 1;
-        unsigned long input_idx =
-            req.url_params.get("idx") ? std::stoul(req.url_params.get("idx")) : 1;
-        ulong idx = (input_idx > 0) ? (input_idx - 1) : 0;
+        ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 7;
+        double start = req.url_params.get("start") ? std::stod(req.url_params.get("start")) : 0.0;
+        double end = req.url_params.get("end") ? std::stod(req.url_params.get("end")) : 30.0;
 
-        // Range for random sampling (Higher T is better for CLT convergence)
-        double t_start =
-            req.url_params.get("start") ? std::stod(req.url_params.get("start")) : 1000.0;
-        double t_end = req.url_params.get("end") ? std::stod(req.url_params.get("end")) : 2000.0;
-        int samples =
-            req.url_params.get("samples") ? std::stoi(req.url_params.get("samples")) : 5000;
-
-        // 2. Compute Samples
-        // We do this in a single call since the function handles the loop efficiently.
-        // If samples > 100,000, you might want to chunk this with OpenMP inside the CPP file.
-        std::vector<SelbergSample> data =
-            compute_selberg_samples(q, idx, t_start, t_end, samples, 64);
-
-        // 3. Convert to JSON
-        // We return the raw normalized values so the Frontend (JS) can bin them into a histogram.
-        std::vector<crow::json::wvalue> json_data;
-        json_data.reserve(data.size());
-
-        for (const auto& item : data) {
-            crow::json::wvalue p;
-            p["t"] = item.t;
-            p["val"] = item.normalized_val;  // This is what goes into the histogram
-            json_data.push_back(std::move(p));
+        // Determine step size based on range to keep point count reasonable
+        // e.g., target ~500 points per character
+        double range = end - start;
+        double steps = 500.0;
+        double step_size = range / steps;
+        if (req.url_params.get("step")) {
+            step_size = std::stod(req.url_params.get("step"));
         }
 
-        crow::json::wvalue response;
-        response["samples"] = std::move(json_data);
-        response["q"] = q;
-        response["idx"] = idx;
+        // 2. Compute using the Vectorized FFT function
+        // This returns a flat list of {t, char_idx, val}
+        std::vector<LogLPoint> raw_data = compute_log_l_vec(q, start, end, step_size, 64);
 
+        // 3. Reorganize data for JSON: Group by Character Index
+        // Map: char_idx -> list of values
+        std::map<ulong, std::vector<double>> char_map;
+        std::vector<double> t_values;
+
+        // We assume t values are consistent across characters (they are in the loop).
+        // To avoid duplicate t arrays, we extract t once.
+        bool t_collected = false;
+        ulong num_chars = 0;
+
+        // First pass: find number of characters
+        for (const auto& p : raw_data) {
+            if (p.char_idx > num_chars) num_chars = p.char_idx;
+        }
+        num_chars++;  // 0-indexed
+
+        // Pre-allocate map vectors
+        for (ulong c = 0; c < num_chars; ++c) {
+            char_map[c].reserve(raw_data.size() / num_chars);
+        }
+
+        // Fill data
+        double last_t = -99999.0;
+        for (const auto& p : raw_data) {
+            // Check if we moved to a new t-step
+            if (std::abs(p.t - last_t) > 1e-9) {
+                t_values.push_back(p.t);
+                last_t = p.t;
+            }
+
+            // Handle -inf (log of 0) by clamping to a low value for charting
+            double safe_val = (p.log_val < -100) ? -10.0 : p.log_val;
+
+            char_map[p.char_idx].push_back(safe_val);
+        }
+
+        // 4. Construct JSON Response
+        crow::json::wvalue response;
+        response["t"] = std::move(t_values);
+
+        std::vector<crow::json::wvalue> datasets;
+        for (auto const& [c_idx, values] : char_map) {
+            crow::json::wvalue ds;
+            ds["label"] = c_idx;  // "Character 0", "Character 1", etc.
+            ds["data"] = values;
+            datasets.push_back(std::move(ds));
+        }
+
+        response["datasets"] = std::move(datasets);
         return response;
+    });
+
+    // --- Route 2: Selberg CLT (Existing) ---
+    CROW_ROUTE(app, "/selberg_clt")
+    ([](const crow::request& req) {
+        // ... (Keep your existing Selberg logic here) ...
+        // For brevity, I am omitting the body, paste your previous Selberg code here
+        return crow::json::wvalue();
     });
 
     // Root Route

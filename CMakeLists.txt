@@ -24,6 +24,7 @@ add_executable(LFunctionServer
     src/main.cpp 
     src/l_functions_flint.cpp
     src/selberg_clt.cpp
+    src/l_vec_scan.cpp
 )
 
 # 4. Link Libraries
