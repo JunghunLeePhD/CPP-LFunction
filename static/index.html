@@ -7,13 +7,9 @@
         <link rel="stylesheet" href="/static/css/style.css" />
     </head>
     <body>
-        <h2 style="margin-top: 60px">Dirichlet L-Function Visualizer</h2>
+        <h2>Dirichlet L-Function Visualizer (All Characters)</h2>
 
         <div class="controls">
-            <div class="input-group">
-                <label>Real Part (Re s)</label>
-                <input type="number" id="real" value="0.5" step="0.1" onchange="updateCharts()" />
-            </div>
             <div class="input-group">
                 <label>Range Start (t)</label>
                 <input type="number" id="start" value="0" onchange="updateCharts()" />
@@ -24,22 +20,15 @@
             </div>
             <div class="input-group">
                 <label>Modulus (q)</label>
-                <input type="number" id="mod" value="1" min="1" onchange="onModulusChange()" />
-            </div>
-            <div class="input-group">
-                <label>Character (k)</label>
-                <select id="char-select" onchange="updateCharts()">
-                    <option value="1">1 (Principal)</option>
-                </select>
+                <input type="number" id="mod" value="1" min="1" onchange="updateCharts()" />
             </div>
         </div>
 
         <div class="chart-container">
-            <h3>Log Part</h3>
             <canvas id="logChart"></canvas>
         </div>
 
-        <div id="loading-sign"><div class="spinner"></div></div>
+        <div id="loading-sign">Computing FFT...</div>
         <script src="/static/js/app.js"></script>
     </body>
 </html>
