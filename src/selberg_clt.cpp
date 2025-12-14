@@ -8,78 +8,84 @@
 #include <iostream>
 #include <random>
 
-std::vector<SelbergSample> compute_selberg_samples(ulong q, ulong char_idx, double t_start,
-                                                   double t_end, int num_samples, slong prec) {
-    std::vector<SelbergSample> results;
-    results.reserve(num_samples);
-
-    // 1. Initialize FLINT/Arb variables once
-    acb_t s, res;
-    acb_init(s);
-    acb_init(res);
-
-    arb_t arb_t_val, arb_half, arb_log_mod, arb_norm_factor;
-    arb_init(arb_t_val);
-    arb_init(arb_half);
-    arb_init(arb_log_mod);
-    arb_init(arb_norm_factor);
-
-    // Set Real part = 0.5
-    arb_set_d(arb_half, 0.5);
-
-    // 2. Initialize Dirichlet Group and Character ONCE
-    // This is much faster than re-initializing inside the loop
+std::vector<std::vector<double>> compute_selberg_samples_fft(ulong q, double t_start, double t_end,
+                                                             int num_samples, slong prec) {
+    // 1. Initialize Group
     dirichlet_group_t G;
     dirichlet_group_init(G, q);
+    ulong num_chars = dirichlet_group_size(G);
 
-    dirichlet_char_t chi;
-    dirichlet_char_init(chi, G);
-    dirichlet_char_index(chi, G, char_idx);
+    // 2. Prepare Output Structure
+    // storage[char_idx] = list of normalized values
+    std::vector<std::vector<double>> storage(num_chars);
+    for (ulong k = 0; k < num_chars; ++k) {
+        storage[k].reserve(num_samples);
+    }
 
-    // 3. Setup Random Number Generator
-    // We use thread_local to ensure thread safety if called from OpenMP in main
+    // 3. FLINT Variables
+    acb_t s;
+    acb_init(s);
+
+    // Allocate vector for results of ALL characters
+    acb_ptr l_values = _acb_vec_init(num_chars);
+
+    arb_t mag, log_mag;
+    arb_init(mag);
+    arb_init(log_mag);
+
+    acb_dirichlet_hurwitz_precomp_t precomp;
+
+    // 4. Random Generator
     static thread_local std::mt19937 gen(std::random_device{}());
     std::uniform_real_distribution<> dis(t_start, t_end);
 
-    // 4. Sampling Loop
+    // 5. Sampling Loop
     for (int i = 0; i < num_samples; ++i) {
         double current_t = dis(gen);
 
         // Set s = 0.5 + i*t
-        arb_set_d(arb_t_val, current_t);
-        acb_set_arb_arb(s, arb_half, arb_t_val);
+        acb_set_d_d(s, 0.5, current_t);
 
-        // Compute L(s, chi)
-        acb_dirichlet_l(res, s, G, chi, prec);
+        // A. Precompute Hurwitz parameters (REQUIRED for vec function)
+        acb_dirichlet_hurwitz_precomp_init(precomp, s, 0, 0, 0, 0, prec);
 
-        // Compute log|L(s)|
-        // |L(s)|
-        acb_abs(arb_log_mod, res, prec);
-        // log(|L(s)|)
-        arb_log(arb_log_mod, arb_log_mod, prec);
+        // B. THE FFT STEP
+        // Computes L(s, chi) for ALL chi simultaneously
+        acb_dirichlet_l_vec_hurwitz(l_values, s, precomp, G, prec);
 
-        // Compute Variance: sigma = sqrt(0.5 * log(log(t)))
+        // C. Calculate Normalization Factor for this t
+        // sigma = sqrt(0.5 * log(log(t)))
         double log_log_t = std::log(std::log(current_t));
         double sigma = std::sqrt(0.5 * log_log_t);
+        if (sigma < 1e-9) sigma = 1.0;  // Safety
 
-        // Extract raw value to double
-        double raw_val = arf_get_d(arb_midref(arb_log_mod), ARF_RND_NEAR);
+        // D. Distribute results to each character
+        for (ulong k = 0; k < num_chars; k++) {
+            // Get |L|
+            acb_abs(mag, l_values + k, prec);
 
-        // Normalize
-        double norm_val = raw_val / sigma;
+            double norm_val = -999.0;
 
-        results.push_back({current_t, raw_val, norm_val});
+            if (!arb_is_zero(mag)) {
+                // log(|L|)
+                arb_log(log_mag, mag, prec);
+                double raw_val = arf_get_d(arb_midref(log_mag), ARF_RND_NEAR);
+                norm_val = raw_val / sigma;
+            }
+
+            storage[k].push_back(norm_val);
+        }
+
+        // Cleanup precomputation for this t
+        acb_dirichlet_hurwitz_precomp_clear(precomp);
     }
 
-    // 5. Cleanup
-    dirichlet_char_clear(chi);
-    dirichlet_group_clear(G);
+    // 6. Cleanup
+    _acb_vec_clear(l_values, num_chars);
     acb_clear(s);
-    acb_clear(res);
-    arb_clear(arb_t_val);
-    arb_clear(arb_half);
-    arb_clear(arb_log_mod);
-    arb_clear(arb_norm_factor);
+    arb_clear(mag);
+    arb_clear(log_mag);
+    dirichlet_group_clear(G);
 
-    return results;
+    return storage;
 }
