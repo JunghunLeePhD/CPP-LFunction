@@ -20,15 +20,21 @@
             </div>
             <div class="input-group">
                 <label>Modulus (q)</label>
-                <input type="number" id="mod" value="1" min="1" onchange="updateCharts()" />
+                <input type="number" id="mod" value="7" min="1" onchange="updateCharts()" />
             </div>
         </div>
 
         <div class="chart-container">
+            <h3>Combined View</h3>
             <canvas id="logChart"></canvas>
         </div>
 
-        <div id="loading-sign">Computing FFT...</div>
+        <h3 style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px">
+            Individual Character Views
+        </h3>
+        <div id="sub-charts-grid"></div>
+
+        <div id="loading-sign"><div class="spinner"></div></div>
         <script src="/static/js/app.js"></script>
     </body>
 </html>
