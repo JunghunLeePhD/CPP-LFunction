@@ -23,7 +23,7 @@ find_package(OpenMP REQUIRED)
 add_executable(LFunctionServer 
     src/main.cpp 
     src/l_functions_flint.cpp
-    src/selberg_clt.cpp
+    src/dirichlet_clt_t.cpp
     src/l_vec_scan.cpp
 )
 

@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "crow.h"
+#include "dirichlet_clt_t.hpp"
 #include "l_functions_flint.hpp"
 #include "l_vec_scan.hpp"
-#include "selberg_clt.hpp"
 
 int main() {
     crow::SimpleApp app;
@@ -85,14 +85,14 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/selberg")
+    CROW_ROUTE(app, "/dirichlet_clt_t")
     ([](const crow::request&, crow::response& res) {
         // Make sure this file exists in your build/static folder
-        res.set_static_file_info("static/selberg.html");
+        res.set_static_file_info("static/dirichlet_clt_t/index.html");
         res.end();
     });
 
-    CROW_ROUTE(app, "/selberg_data")
+    CROW_ROUTE(app, "/dirichlet_clt_t_data")
     ([](const crow::request& req) {
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 7;
         int samples =
@@ -103,7 +103,7 @@ int main() {
 
         // This returns data for ALL characters at once
         std::vector<std::vector<double>> all_data =
-            compute_selberg_samples_fft(q, t_start, t_end, samples, 64);
+            compute_dirichlet_clt_t_fft(q, t_start, t_end, samples, 64);
 
         // Pack into JSON
         std::vector<crow::json::wvalue> all_datasets;

@@ -1,5 +1,5 @@
-#ifndef SELBERG_CLT_HPP
-#define SELBERG_CLT_HPP
+#ifndef DIRICHLET_CLT_T
+#define DIRICHLET_CLT_T
 
 #include <flint/flint.h>
 
@@ -11,7 +11,7 @@ struct SelbergSample {
     double normalized_val;
 };
 
-std::vector<std::vector<double>> compute_selberg_samples_fft(ulong q, double t_start, double t_end,
+std::vector<std::vector<double>> compute_dirichlet_clt_t_fft(ulong q, double t_start, double t_end,
                                                              int num_samples, slong prec);
 
 #endif

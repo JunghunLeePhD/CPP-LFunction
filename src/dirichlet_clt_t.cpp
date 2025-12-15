@@ -1,4 +1,4 @@
-#include "selberg_clt.hpp"
+#include "dirichlet_clt_t.hpp"
 
 #include <flint/acb.h>
 #include <flint/acb_dirichlet.h>
@@ -8,7 +8,7 @@
 #include <iostream>
 #include <random>
 
-std::vector<std::vector<double>> compute_selberg_samples_fft(ulong q, double t_start, double t_end,
+std::vector<std::vector<double>> compute_dirichlet_clt_t_fft(ulong q, double t_start, double t_end,
                                                              int num_samples, slong prec) {
     // 1. Initialize Group
     dirichlet_group_t G;

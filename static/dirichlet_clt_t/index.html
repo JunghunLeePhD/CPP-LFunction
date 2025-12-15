@@ -235,7 +235,9 @@
                 loader.style.display = 'block';
 
                 try {
-                    const res = await fetch(`/selberg_data?q=${q}&T=${T}&samples=${samples}`);
+                    const res = await fetch(
+                        `/dirichlet_clt_t_data?q=${q}&T=${T}&samples=${samples}`
+                    );
                     const json = await res.json();
 
                     if (!json.datasets || json.datasets.length === 0) {
@@ -260,7 +262,7 @@
                     // Base Dataset: Standard Normal (Thick Red Line)
                     let combinedDatasets = [
                         {
-                            label: 'Standard Normal N(0,1)',
+                            label: 'N(0,1)',
                             data: firstHist.gaussian,
                             borderColor: 'red',
                             borderWidth: 4,
