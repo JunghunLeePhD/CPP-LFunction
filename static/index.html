@@ -3,7 +3,74 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Document</title>
+        <title>L-Function Service</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+                    sans-serif;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 20px;
+                line-height: 1.6;
+                background-color: #f4f4f9;
+                color: #333;
+            }
+            h1 {
+                color: #2c3e50;
+                border-bottom: 2px solid #e1e4e8;
+                padding-bottom: 10px;
+            }
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            li {
+                margin: 15px 0;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            li:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            a {
+                display: block;
+                padding: 20px;
+                text-decoration: none;
+                color: #007bff;
+                font-weight: bold;
+                font-size: 1.1em;
+            }
+            a:hover {
+                color: #0056b3;
+            }
+            .desc {
+                display: block;
+                font-size: 0.9em;
+                color: #666;
+                font-weight: normal;
+                margin-top: 5px;
+            }
+        </style>
     </head>
-    <body></body>
+    <body>
+        <h1>Dirichlet L-Function Dashboard</h1>
+
+        <ul>
+            <li>
+                <a href="/dirichlet_val_t">
+                    L-Function Values
+                    <span class="desc">Compute values for L(s, χ)</span>
+                </a>
+            </li>
+            <li>
+                <a href="/dirichlet_clt_t">
+                    Central Limit Theorem
+                    <span class="desc">Statistical distribution analysis (CLT)</span>
+                </a>
+            </li>
+        </ul>
+    </body>
 </html>
