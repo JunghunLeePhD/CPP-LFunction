@@ -7,7 +7,6 @@
 
 #include "crow.h"
 #include "dirichlet_clt_t.hpp"
-#include "l_functions_flint.hpp"
 #include "l_vec_scan.hpp"
 
 int main() {

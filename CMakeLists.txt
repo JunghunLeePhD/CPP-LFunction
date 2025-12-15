@@ -22,7 +22,6 @@ find_package(OpenMP REQUIRED)
 # 3. Add Executable
 add_executable(LFunctionServer 
     src/main.cpp 
-    src/l_functions_flint.cpp
     src/dirichlet_clt_t.cpp
     src/l_vec_scan.cpp
 )
