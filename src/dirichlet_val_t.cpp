@@ -1,6 +1,6 @@
-#include "l_vec_scan.hpp"
+#include "dirichlet_val_t.hpp"
 
-std::vector<LogLPoint> compute_log_l_vec(ulong q, double t_start, double t_end, double t_step,
+std::vector<LogLPoint> compute_val_t_fft(ulong q, double t_start, double t_end, double t_step,
                                          slong prec) {
     // 1. Initialize FLINT Group
     dirichlet_group_t G;

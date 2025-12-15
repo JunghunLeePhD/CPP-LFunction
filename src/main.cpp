@@ -7,12 +7,19 @@
 
 #include "crow.h"
 #include "dirichlet_clt_t.hpp"
-#include "l_vec_scan.hpp"
+#include "dirichlet_val_t.hpp"
 
 int main() {
     crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/scan_all")
+    CROW_ROUTE(app, "/dirichlet_val_t")
+    ([](const crow::request&, crow::response& res) {
+        // Make sure this file exists in your build/static folder
+        res.set_static_file_info("static/dirichlet_val_t/index.html");
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/dirichlet_val_t_data")
     ([](const crow::request& req) {
         // 1. Parse Parameters
         ulong q = req.url_params.get("q") ? std::stoul(req.url_params.get("q")) : 7;
@@ -30,7 +37,7 @@ int main() {
 
         // 2. Compute using the Vectorized FFT function
         // This returns a flat list of {t, char_idx, val}
-        std::vector<LogLPoint> raw_data = compute_log_l_vec(q, start, end, step_size, 64);
+        std::vector<LogLPoint> raw_data = compute_val_t_fft(q, start, end, step_size, 64);
 
         // 3. Reorganize data for JSON: Group by Character Index
         // Map: char_idx -> list of values

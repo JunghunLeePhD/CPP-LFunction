@@ -23,7 +23,7 @@ find_package(OpenMP REQUIRED)
 add_executable(LFunctionServer 
     src/main.cpp 
     src/dirichlet_clt_t.cpp
-    src/l_vec_scan.cpp
+    src/dirichlet_val_t.cpp
 )
 
 # 4. Link Libraries
